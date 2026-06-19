@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
-import { Home, Users, BookOpen, Mic, CalendarCheck, BarChart3, Bell, LogOut, UserRound } from "lucide-react";
+import { Home, Users, BookOpen, Mic, CalendarCheck, BarChart3, Bell, LogOut } from "lucide-react";
 import { participantOptions, userDisplayName, verifyAdminCode, verifyParticipantCode, type CurrentUser } from "@/lib/sohba-data";
 import { useSohbaStore } from "@/lib/store";
 
@@ -17,15 +17,11 @@ const nav = [
 function Logo() {
   return (
     <div className="flex items-center gap-3">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-hero)] shadow-[var(--shadow-elegant)]">
-        <svg viewBox="0 0 32 32" className="h-6 w-6 text-[color:var(--gold)]" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M6 26V10c0-2 1.5-3 3-3h14c1.5 0 3 1 3 3v16" />
-          <path d="M6 26h20" />
-          <path d="M16 7V4" />
-          <circle cx="16" cy="3" r="1" fill="currentColor" />
-          <path d="M11 14h10M11 18h10" />
-        </svg>
-      </div>
+      <img
+        src="/logo.jpeg"
+        alt="شعار صُحبة القرآن"
+        className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-[var(--shadow-elegant)]"
+      />
       <div className="min-w-0">
         <div className="font-display text-lg leading-tight text-[color:var(--green-deep)] truncate">صُحبة القرآن</div>
         <div className="text-[11px] text-muted-foreground">رحلة الحفظ والمراجعة</div>
@@ -54,10 +50,12 @@ function LoginPanel({ onLogin }: { onLogin: (user: CurrentUser) => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-[color:var(--green-deep)]/25 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
       <div className="w-full max-w-md rounded-2xl border border-[color:var(--gold)]/40 bg-card p-4 shadow-[var(--shadow-elegant)] sm:p-5">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-hero)] text-[color:var(--gold)]">
-            <UserRound className="h-5 w-5" />
-          </div>
+        <div className="mb-4 flex flex-col items-center gap-2 text-center">
+          <img
+            src="/logo.jpeg"
+            alt="شعار صُحبة القرآن"
+            className="h-20 w-20 rounded-2xl object-cover shadow-[var(--shadow-elegant)]"
+          />
           <div className="min-w-0">
             <h1 className="font-display text-xl text-[color:var(--green-deep)]">الدخول</h1>
             <p className="text-xs text-muted-foreground">اختر اسمك وأدخل رمز مجموعتك للتسجيل اليومي.</p>
