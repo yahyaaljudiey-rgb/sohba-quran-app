@@ -210,7 +210,7 @@ const baseGroups: Group[] = [
   {
     id: 4, name: "رفقاء القرآن", level: 1, tone: "cream", code: "73",
     participants: [
-      mk("p5", "محسن البيحني", 4, "quarter"),
+      mk("p5", "محسن اليحيصي", 4, "quarter"),
       mk("p6", "عرفات عمران", 4, "quarter"),
     ],
   },
@@ -232,7 +232,7 @@ const baseGroups: Group[] = [
     id: 7, name: "بُناة المجد", level: 1, tone: "cream", code: "35",
     participants: [
       mk("p11", "يحيى الجديعي", 7, "quarter"),
-      mk("p12", "عبدالرحمن الرحاوي", 7, "quarter"),
+      mk("p12", "عبدالرحمن الرهاوي", 7, "quarter"),
     ],
   },
 ];
