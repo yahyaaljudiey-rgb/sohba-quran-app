@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Outside Lovable's own sandbox (e.g. building on Vercel's CI), the nitro
+  // build step is off by default, so the app ships as a plain client-only
+  // Vite build with no SSR server adapter — that's what produced the 404 on
+  // Vercel. Force it on with the "vercel" preset so the build emits a proper
+  // Vercel Build Output API bundle.
+  nitro: { preset: "vercel" },
 });
