@@ -423,8 +423,28 @@ export const statusForParticipantOnDay = (participant: Participant, day: number,
   return "idle";
 };
 
-const statusFromRecord = (participant: Participant, records = dailyRecords, today = getProgramDay()): ParticipantStatus =>
-  statusForParticipantOnDay(participant, today.absoluteDay, records);
+const hasAnyProgress = (record: DailyRecord) =>
+  record.wirdDone || record.listenedToPeer || record.uploaded || record.needsRedo;
+
+// Programs that start mid-rollout have participants backfilling earlier days
+// rather than today specifically. The dashboard-level status (no day picker
+// in sight) should reflect a participant's most recent recorded activity, not
+// strictly "today" — otherwise everyone who only logged past days looks like
+// they "haven't started" even after fully completing them.
+const latestActiveDay = (participant: Participant, records: DailyRecord[], today: ProgramDay) => {
+  let latest: DailyRecord | undefined;
+  for (const record of records) {
+    if (record.participantId !== participant.id || record.day > today.absoluteDay) continue;
+    if (!hasAnyProgress(record)) continue;
+    if (!latest || record.day > latest.day) latest = record;
+  }
+  return latest;
+};
+
+const statusFromRecord = (participant: Participant, records = dailyRecords, today = getProgramDay()): ParticipantStatus => {
+  const latest = latestActiveDay(participant, records, today);
+  return latest ? statusForParticipantOnDay(participant, latest.day, records) : "idle";
+};
 
 const participantMonthReport = (participant: Participant, records = dailyRecords, today = getProgramDay()): ParticipantReport => {
   const group = requireGroupById(participant.groupId);
