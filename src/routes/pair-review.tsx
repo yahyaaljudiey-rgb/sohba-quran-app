@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { ReviewBadge, StatusBadge } from "@/components/Badges";
-import { getEffectiveRecordForDay, participantReports, REVIEW_LABEL, dayRelativeLabel, selectableProgramDays, statusForParticipantOnDay, visibleParticipantIdsFor, type DailyRecordPatch, type ParticipantStatus, type ReviewType } from "@/lib/sohba-data";
+import { findRecordForDay, participantReports, REVIEW_LABEL, dayRelativeLabel, selectableProgramDays, statusForParticipantOnDay, visibleParticipantIdsFor, type DailyRecordPatch, type ParticipantStatus, type ReviewType } from "@/lib/sohba-data";
 import { useSohbaStore } from "@/lib/store";
 import { BookOpen, CheckCircle2, Copy, Mic, RotateCcw } from "lucide-react";
 
@@ -31,7 +31,7 @@ function PairReviewPage() {
 
   const filtered = useMemo(() => {
     return list.filter((p) => {
-      const selectedStatus = statusForParticipantOnDay(p, selectedDay);
+      const selectedStatus = statusForParticipantOnDay(p, selectedDay, effectiveDailyRecords);
       switch (filter) {
         case "done": return selectedStatus === "recited";
         case "pending": return ["idle", "wird_done", "ready"].includes(selectedStatus);
@@ -42,7 +42,7 @@ function PairReviewPage() {
         default: return true;
       }
     });
-  }, [filter, list, selectedDay]);
+  }, [filter, list, selectedDay, effectiveDailyRecords]);
 
   const chips: { v: Filter; label: string }[] = [
     { v: "all", label: "الكل" },
@@ -105,28 +105,28 @@ function PairReviewPage() {
       <div className="overflow-hidden rounded-2xl border border-[color:var(--gold)]/40 bg-card">
         <ul className="divide-y divide-[color:var(--gold)]/20">
           {filtered.map((p) => {
-            const today = getEffectiveRecordForDay(p.id, selectedDay);
-            const selectedStatus = statusForParticipantOnDay(p, selectedDay);
+            const record = findRecordForDay(effectiveDailyRecords, p.id, selectedDay);
+            const selectedStatus = statusForParticipantOnDay(p, selectedDay, effectiveDailyRecords);
             const actions = [
               {
                 label: "وردي",
                 icon: BookOpen,
-                patch: today?.wirdDone ? { wirdDone: false, listenedToPeer: false, uploaded: false } : { wirdDone: true },
-                active: Boolean(today?.wirdDone),
+                patch: record?.wirdDone ? { wirdDone: false, listenedToPeer: false, uploaded: false } : { wirdDone: true },
+                active: Boolean(record?.wirdDone),
               },
               {
                 label: "سمعت له",
                 icon: Mic,
-                patch: today?.listenedToPeer ? { listenedToPeer: false, uploaded: false } : { wirdDone: true, listenedToPeer: true },
-                active: Boolean(today?.listenedToPeer),
+                patch: record?.listenedToPeer ? { listenedToPeer: false, uploaded: false } : { wirdDone: true, listenedToPeer: true },
+                active: Boolean(record?.listenedToPeer),
               },
               {
                 label: "رفعت",
                 icon: CheckCircle2,
-                patch: today?.uploaded ? { uploaded: false } : { wirdDone: true, listenedToPeer: true, uploaded: true },
-                active: Boolean(today?.uploaded),
+                patch: record?.uploaded ? { uploaded: false } : { wirdDone: true, listenedToPeer: true, uploaded: true },
+                active: Boolean(record?.uploaded),
               },
-              { label: "إعادة", icon: RotateCcw, patch: { needsRedo: !today?.needsRedo }, active: Boolean(today?.needsRedo) },
+              { label: "إعادة", icon: RotateCcw, patch: { needsRedo: !record?.needsRedo }, active: Boolean(record?.needsRedo) },
             ];
             return (
               <li key={p.id} className="px-4 py-3">

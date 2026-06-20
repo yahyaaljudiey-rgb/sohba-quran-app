@@ -155,8 +155,8 @@ export const REVIEW_COLOR: Record<ReviewType, string> = {
   half: "bg-[color:var(--review-half)]/12 text-[color:var(--review-half)] border-[color:var(--review-half)]/30",
 };
 
-// Malaysia Hijri calendar: 1 Muharram 1448 AH starts on 16 June 2026.
-const PROGRAM_START_GREGORIAN = "2026-06-16T00:00:00+08:00";
+// Malaysia Hijri calendar: 1 Muharram 1448 AH starts Wednesday 17 June 2026.
+const PROGRAM_START_GREGORIAN = "2026-06-17T00:00:00+08:00";
 const PROGRAM_HIJRI_YEAR = 1448;
 const HIJRI_MONTHS = [
   "محرم",
@@ -336,7 +336,6 @@ export const getPartner = (participantId: string) => {
 };
 
 export const dailyRecordKey = (participantId: string, day: number) => `${participantId}:${day}`;
-const DAILY_RECORDS_STORAGE_KEY = "sohba-daily-records-v2";
 
 const CURRENT_USER_STORAGE_KEY = "sohba-current-user-v1";
 
@@ -375,40 +374,25 @@ export const visibleParticipantIdsFor = (user: CurrentUser | null) => {
 export const canEditParticipant = (user: CurrentUser | null, participantId: string) =>
   isAdmin(user) || visibleParticipantIdsFor(user).includes(participantId);
 
-export const readDailyRecordOverrides = (): Record<string, DailyRecordPatch> => {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(window.localStorage.getItem(DAILY_RECORDS_STORAGE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-};
-
-export const saveDailyRecordPatch = (participantId: string, patch: DailyRecordPatch, day = getProgramDay().absoluteDay, user: CurrentUser | null = readCurrentUser()) => {
-  if (typeof window === "undefined" || day > getProgramDay().absoluteDay || !canEditParticipant(user, participantId)) return;
-  const overrides = readDailyRecordOverrides();
-  const key = dailyRecordKey(participantId, day);
-  overrides[key] = { ...overrides[key], ...patch };
-  window.localStorage.setItem(DAILY_RECORDS_STORAGE_KEY, JSON.stringify(overrides));
-};
-
-export const getEffectiveDailyRecords = () => {
-  const overrides = readDailyRecordOverrides();
-  return dailyRecords.map((record) => ({
+// Pure helpers shared by both the client (rendering already-fetched records)
+// and the server functions in server-fns.ts (merging rows fetched from the
+// database). Neither side reads/writes storage directly here.
+export const mergeDailyRecordPatches = (patches: Record<string, DailyRecordPatch>): DailyRecord[] =>
+  dailyRecords.map((record) => ({
     ...record,
-    ...overrides[dailyRecordKey(record.participantId, record.day)],
+    ...patches[dailyRecordKey(record.participantId, record.day)],
   }));
+
+export const findRecordForDay = (records: DailyRecord[], participantId: string, day: number) =>
+  records.find((r) => r.participantId === participantId && r.day === day);
+
+export const isPairUploadedOnDay = (records: DailyRecord[], groupId: number, day: number) => {
+  const group = findGroupById(groupId);
+  if (!group) return false;
+  return group.participants.every((p) => findRecordForDay(records, p.id, day)?.uploaded);
 };
 
-export const getRecordForDay = (participantId: string, day = getProgramDay().absoluteDay) =>
-  dailyRecords.find((r) => r.participantId === participantId && r.day === day);
-
-export const getEffectiveRecordForDay = (participantId: string, day = getProgramDay().absoluteDay) =>
-  getEffectiveDailyRecords().find((r) => r.participantId === participantId && r.day === day);
-
-export const getTodayRecord = (participantId: string) => getRecordForDay(participantId);
-
-export const getEffectiveTodayRecord = (participantId: string) => getEffectiveRecordForDay(participantId);
+export const canEditDay = (day: number, today = getProgramDay()) => day <= today.absoluteDay;
 
 export const dayRelativeLabel = (absoluteDay: number, today = getProgramDay()) => {
   if (absoluteDay === today.absoluteDay) return "اليوم";
@@ -427,21 +411,7 @@ export const selectableProgramDays = (today = getProgramDay()) => {
   return [...pastAndToday, ...future];
 };
 
-export const isPairUploadedToday = (groupId: number) => {
-  const group = findGroupById(groupId);
-  if (!group) return false;
-  return group.participants.every((p) => getTodayRecord(p.id)?.uploaded);
-};
-
-export const isEffectivePairUploadedForDay = (groupId: number, day = getProgramDay().absoluteDay) => {
-  const group = findGroupById(groupId);
-  if (!group) return false;
-  return group.participants.every((p) => getEffectiveRecordForDay(p.id, day)?.uploaded);
-};
-
-export const isEffectivePairUploadedToday = (groupId: number) => isEffectivePairUploadedForDay(groupId);
-
-export const statusForParticipantOnDay = (participant: Participant, day = getProgramDay().absoluteDay, records = getEffectiveDailyRecords()): ParticipantStatus => {
+export const statusForParticipantOnDay = (participant: Participant, day: number, records: DailyRecord[]): ParticipantStatus => {
   const record = records.find((r) => r.participantId === participant.id && r.day === day);
   if (!record) return "idle";
   const group = baseGroups.find((g) => g.id === participant.groupId);
@@ -499,7 +469,7 @@ const participantMonthReport = (participant: Participant, records = dailyRecords
   };
 };
 
-export const participantReports = (records = getEffectiveDailyRecords(), today = getProgramDay()): ParticipantReport[] =>
+export const participantReports = (records: DailyRecord[], today = getProgramDay()): ParticipantReport[] =>
   baseParticipants().map((participant) => participantMonthReport(participant, records, today));
 
 export const reportDayRange = (period: ReportPeriod, today = getProgramDay()) => {
@@ -512,7 +482,7 @@ export const reportDayRange = (period: ReportPeriod, today = getProgramDay()) =>
   );
 };
 
-export const buildParticipantPeriodReport = (participantId: string, period: ReportPeriod, records = getEffectiveDailyRecords(), today = getProgramDay()): ParticipantPeriodReport | null => {
+export const buildParticipantPeriodReport = (participantId: string, period: ReportPeriod, records: DailyRecord[], today = getProgramDay()): ParticipantPeriodReport | null => {
   const participant = baseParticipants().find((p) => p.id === participantId);
   if (!participant) return null;
   const base = participantMonthReport(participant, records, today);
@@ -539,12 +509,12 @@ export const buildParticipantPeriodReport = (participantId: string, period: Repo
   };
 };
 
-export const buildVisiblePeriodReports = (period: ReportPeriod, user: CurrentUser | null = readCurrentUser(), today = getProgramDay()) =>
+export const buildVisiblePeriodReports = (period: ReportPeriod, records: DailyRecord[], user: CurrentUser | null = readCurrentUser(), today = getProgramDay()) =>
   visibleParticipantIdsFor(user)
-    .map((id) => buildParticipantPeriodReport(id, period, getEffectiveDailyRecords(), today))
+    .map((id) => buildParticipantPeriodReport(id, period, records, today))
     .filter(Boolean) as ParticipantPeriodReport[];
 
-export const getGroups = (records = getEffectiveDailyRecords(), today = getProgramDay()): Group[] => baseGroups.map((group) => ({
+export const getGroups = (records: DailyRecord[], today = getProgramDay()): Group[] => baseGroups.map((group) => ({
   ...group,
   participants: group.participants.map((participant) => {
     const report = participantMonthReport(participant, records, today);
@@ -556,8 +526,8 @@ export const getGroups = (records = getEffectiveDailyRecords(), today = getProgr
   }),
 }));
 
-export const allParticipants = (): Participant[] =>
-  participantReports().map((participant) => ({
+export const allParticipants = (records: DailyRecord[], today = getProgramDay()): Participant[] =>
+  participantReports(records, today).map((participant) => ({
     id: participant.id,
     name: participant.name,
     groupId: participant.groupId,
@@ -631,9 +601,7 @@ export const getWirdForParticipant = (participantId: string) => {
 export const participantOptions = () => baseParticipants();
 
 
-const NOTIFICATIONS_STORAGE_KEY = "sohba-notifications-v1";
-
-const seedNotifications: ProgramNotification[] = [
+export const seedNotifications: ProgramNotification[] = [
   {
     id: "seed-wird",
     title: "تذكير بالورد اليومي",
@@ -645,32 +613,10 @@ const seedNotifications: ProgramNotification[] = [
   },
 ];
 
-export const readStoredNotifications = (): ProgramNotification[] => {
-  if (typeof window === "undefined") return seedNotifications;
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(NOTIFICATIONS_STORAGE_KEY) ?? "[]") as ProgramNotification[];
-    return [...seedNotifications, ...stored];
-  } catch {
-    return seedNotifications;
-  }
-};
-
-export const saveProgramNotification = (notification: Omit<ProgramNotification, "id" | "createdAt" | "author">, user: CurrentUser | null = readCurrentUser()) => {
-  if (typeof window === "undefined" || !isAdmin(user)) return;
-  const stored = JSON.parse(window.localStorage.getItem(NOTIFICATIONS_STORAGE_KEY) ?? "[]") as ProgramNotification[];
-  stored.unshift({
-    ...notification,
-    id: `n-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    author: user.name,
-  });
-  window.localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(stored));
-};
-
 const participantGroupId = (participantId: string) =>
   baseParticipants().find((p) => p.id === participantId)?.groupId;
 
-export const notificationsForUser = (all: ProgramNotification[] = readStoredNotifications(), user: CurrentUser | null = readCurrentUser()) => {
+export const notificationsForUser = (all: ProgramNotification[], user: CurrentUser | null) => {
   if (!user || user.role === "admin") return all;
   const groupId = participantGroupId(user.participantId);
   return all.filter((n) => {
@@ -687,33 +633,8 @@ export const targetLabel = (target: NotificationTarget) => {
   return baseParticipants().find((p) => p.id === target.participantId)?.name ?? "طالب";
 };
 
-const MONTHLY_SHEIKH_STORAGE_KEY = "sohba-monthly-sheikh-review-v1";
-export const monthlyReviewKey = (participantId: string, today = getProgramDay()) => `${participantId}:${today.hijriYear}:${today.hijriMonthIndex}`;
-
-export const readMonthlySheikhReviews = (): Record<string, MonthlySheikhReview> => {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(window.localStorage.getItem(MONTHLY_SHEIKH_STORAGE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-};
-
-export const getMonthlySheikhReview = (participantId: string) =>
-  readMonthlySheikhReviews()[monthlyReviewKey(participantId)];
-
-export const saveMonthlySheikhReview = (review: Omit<MonthlySheikhReview, "hijriMonthIndex" | "hijriYear" | "savedAt">) => {
-  if (typeof window === "undefined") return;
-  const today = getProgramDay();
-  const reviews = readMonthlySheikhReviews();
-  reviews[monthlyReviewKey(review.participantId, today)] = {
-    ...review,
-    hijriMonthIndex: today.hijriMonthIndex,
-    hijriYear: today.hijriYear,
-    savedAt: new Date().toISOString(),
-  };
-  window.localStorage.setItem(MONTHLY_SHEIKH_STORAGE_KEY, JSON.stringify(reviews));
-};
+export const monthlyReviewKey = (participantId: string, period: { hijriYear: number; hijriMonthIndex: number } = getProgramDay()) =>
+  `${participantId}:${period.hijriYear}:${period.hijriMonthIndex}`;
 
 export const getProgramInfo = (today = getProgramDay()) => ({
   startDate: "1 محرم 1448هـ",

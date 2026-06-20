@@ -20,7 +20,7 @@ const errorTypes = ["خطأ في الحفظ", "خطأ تجويدي", "تردد",
 
 function SessionPage() {
   const { today, currentUser, effectiveDailyRecords, monthlySheikhReviews, saveMonthlySheikhReview } = useSohbaStore();
-  const list = allParticipants();
+  const list = allParticipants(effectiveDailyRecords, today);
   const [pid, setPid] = useState(list[0].id);
   const [mode, setMode] = useState<"online" | "in_person">("in_person");
   const [grade, setGrade] = useState<(typeof grades)[number]>("جيد جدًا");
@@ -128,8 +128,8 @@ function SessionPage() {
             <span className="text-sm text-[color:var(--status-done)]">تم حفظ التقييم بحمد الله ✓</span>
           ) : <span />}
           <button
-            onClick={() => {
-              saveMonthlySheikhReview({ participantId: pid, mode, reviewType: p.reviewType, grade, errors: errs, note });
+            onClick={async () => {
+              await saveMonthlySheikhReview({ participantId: pid, mode, reviewType: p.reviewType, grade, errors: errs, note });
               setSaved(true);
               setTimeout(() => setSaved(false), 2500);
             }}

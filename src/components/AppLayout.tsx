@@ -129,7 +129,7 @@ function LoginPanel({ onLogin }: { onLogin: (user: CurrentUser) => void }) {
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { ready, currentUser: user, login, logout } = useSohbaStore();
+  const { ready, loadError, currentUser: user, login, logout } = useSohbaStore();
 
   const role = user?.role ?? "participant";
   const visibleNav = nav.filter((n) => (n.roles as readonly string[]).includes(role));
@@ -177,6 +177,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </header>
 
       <main key={pathname} className="mx-auto max-w-6xl px-3 py-4 page-enter sm:px-4 sm:py-6">
+        {loadError && (
+          <div className="mb-4 rounded-2xl border border-[color:var(--status-redo)]/40 bg-[color:var(--status-redo)]/10 p-3 text-sm text-[color:var(--status-redo)]">
+            {loadError}
+          </div>
+        )}
         {children}
       </main>
 

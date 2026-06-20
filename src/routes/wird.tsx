@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { ProgressBar, ReviewBadge, StatusBadge } from "@/components/Badges";
-import { dailyCompletion, getEffectiveRecordForDay, getGroups, getPartner, getWirdForLevelOnDay, isEffectivePairUploadedForDay, participantReports, dayRelativeLabel, selectableProgramDays, statusForParticipantOnDay, visibleParticipantIdsFor, type DailyRecordPatch } from "@/lib/sohba-data";
+import { dailyCompletion, findRecordForDay, getGroups, getPartner, getWirdForLevelOnDay, isPairUploadedOnDay, participantReports, dayRelativeLabel, selectableProgramDays, statusForParticipantOnDay, visibleParticipantIdsFor, type DailyRecordPatch } from "@/lib/sohba-data";
 import { useSohbaStore } from "@/lib/store";
 import { BookOpen, CheckCircle2, Mic, RotateCcw, type LucideIcon } from "lucide-react";
 
@@ -30,10 +30,10 @@ function WirdPage() {
   const group = groups.find((g) => g.id === selected.groupId) ?? groups[0];
   const partner = getPartner(selected.id);
   const selectedProgramDay = dayOptions.find((day) => day.absoluteDay === selectedDay) ?? dayOptions[0];
-  const todayRecord = getEffectiveRecordForDay(selected.id, selectedDay);
-  const pairUploaded = isEffectivePairUploadedForDay(group.id, selectedDay);
+  const todayRecord = findRecordForDay(effectiveDailyRecords, selected.id, selectedDay);
+  const pairUploaded = isPairUploadedOnDay(effectiveDailyRecords, group.id, selectedDay);
   const todayWird = getWirdForLevelOnDay(group.level, selectedDay);
-  const status = statusForParticipantOnDay(selected, selectedDay);
+  const status = statusForParticipantOnDay(selected, selectedDay, effectiveDailyRecords);
   const isFutureDay = selectedDay > today.absoluteDay;
 
   const updateToday = (patch: DailyRecordPatch) => updateDailyRecord(selected.id, patch, selectedDay);

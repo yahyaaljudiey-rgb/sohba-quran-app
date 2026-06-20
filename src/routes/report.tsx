@@ -79,7 +79,7 @@ function ReportPage() {
   const programInfo = getProgramInfo(today);
   const visibleIds = visibleParticipantIdsFor(user);
   const groups = getGroups(effectiveDailyRecords, today).filter((g) => g.participants.some((p) => visibleIds.includes(p.id)));
-  const periodReports = buildVisiblePeriodReports(period, user, today);
+  const periodReports = buildVisiblePeriodReports(period, effectiveDailyRecords, user, today);
   const admin = isAdmin(user);
 
   const groupRanking = groups
