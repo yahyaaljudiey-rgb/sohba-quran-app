@@ -147,6 +147,10 @@ function WirdPage() {
             <div className="text-xs text-[color:var(--gold-deep)]">ورد {selectedProgramDay.dateLabel} — {todayWird.title}</div>
             <div className="mt-1 font-display text-xl text-[color:var(--green-deep)]">{todayWird.surah}</div>
             <div className="text-sm text-muted-foreground">{todayWird.dailyPortion} · {todayWird.ayat}</div>
+            <div className="mt-3 rounded-xl border border-[color:var(--gold)]/30 bg-white/70 p-3 text-center">
+              <div className="mb-1 text-[11px] text-muted-foreground">يبدأ الورد من قوله تعالى</div>
+              <p className="font-display text-lg leading-loose text-[color:var(--green-deep)]" dir="rtl">{todayWird.startAyahText}</p>
+            </div>
             <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
               <div><span className="text-muted-foreground">الموضع:</span> {todayWird.quarters}</div>
               <div><span className="text-muted-foreground">الصفحات:</span> {todayWird.pages}</div>

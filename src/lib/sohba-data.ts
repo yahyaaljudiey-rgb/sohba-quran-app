@@ -1,3 +1,5 @@
+import hizbQuarters from "./hizb-quarters.json";
+
 export type ReviewType = "quarter" | "half";
 export type Level = 1 | 2;
 export type ParticipantStatus =
@@ -58,6 +60,7 @@ export interface WirdPlan {
   dailyPortion: string;
   surah: string;
   ayat: string;
+  startAyahText: string;
   juz: string;
   pages: string;
   quarters: string;
@@ -565,13 +568,10 @@ const portionQuarters: Record<ReviewType, number> = {
   half: 2,
 };
 
-const surahForPage = (page: number) => {
-  if (page <= 49) return "سورة البقرة";
-  if (page <= 76) return "سورة آل عمران";
-  if (page <= 106) return "سورة النساء";
-  if (page <= 127) return "سورة المائدة";
-  return "ورد مصحفي متتابع";
-};
+// Standard Hizb-quarter (rub' al-hizb) boundaries, sourced once from the
+// alquran.cloud API (quran-uthmani edition) rather than hardcoded from
+// memory — Quranic text must come from a verified source, never guessed.
+const hizbQuarterStarts = hizbQuarters as { q: number; surah: string; ayah: number; text: string }[];
 
 const programDayFromAbsolute = (absoluteDay: number) => {
   const start = new Date(PROGRAM_START_GREGORIAN).getTime();
@@ -592,14 +592,16 @@ const buildWirdPlan = (level: Level, reviewType: ReviewType, absoluteDay = getPr
   const quarterLabel = hizbStart === hizbEnd
     ? `الحزب ${hizbStart}، الربع ${quarterStart}${quartersPerDay > 1 ? `-${quarterEnd}` : ""}`
     : `الحزب ${hizbStart} الربع ${quarterStart} إلى الحزب ${hizbEnd} الربع ${quarterEnd}`;
+  const start = hizbQuarterStarts[startQuarter];
 
   return {
     level,
     reviewType,
     title: `ورد ${LEVEL_LABEL[level]}`,
     dailyPortion: REVIEW_LABEL[reviewType],
-    surah: surahForPage(pageStart),
-    ayat: `ورد يوم ${programDay.dateLabel}`,
+    surah: start.surah,
+    ayat: `يبدأ من سورة ${start.surah.replace(/^سُورَةُ\s*/, "")}، الآية ${start.ayah}`,
+    startAyahText: start.text,
     juz: `الأسبوع ${programDay.week} من شهر ${programDay.hijriMonthName}`,
     pages: `صفحات ${pageStart} - ${pageEnd}`,
     quarters: quarterLabel,
