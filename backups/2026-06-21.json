@@ -1,0 +1,370 @@
+{
+  "takenAt": "2026-06-21T17:40:39.578Z",
+  "dailyRecords": [
+    {
+      "participant_id": "p1",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:27:57.653Z"
+    },
+    {
+      "participant_id": "p1",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:25:28.487Z"
+    },
+    {
+      "participant_id": "p1",
+      "day": 3,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:25:37.804Z"
+    },
+    {
+      "participant_id": "p1",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T16:14:50.091Z"
+    },
+    {
+      "participant_id": "p1",
+      "day": 5,
+      "wird_done": false,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T05:10:24.382Z"
+    },
+    {
+      "participant_id": "p10",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T14:54:03.973Z"
+    },
+    {
+      "participant_id": "p10",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T14:54:09.898Z"
+    },
+    {
+      "participant_id": "p10",
+      "day": 3,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T14:51:14.507Z"
+    },
+    {
+      "participant_id": "p10",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T14:50:47.312Z"
+    },
+    {
+      "participant_id": "p10",
+      "day": 5,
+      "wird_done": false,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T14:53:58.862Z"
+    },
+    {
+      "participant_id": "p11",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T07:57:15.348Z"
+    },
+    {
+      "participant_id": "p11",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T07:57:28.672Z"
+    },
+    {
+      "participant_id": "p11",
+      "day": 3,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T15:56:34.077Z"
+    },
+    {
+      "participant_id": "p11",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T15:56:23.848Z"
+    },
+    {
+      "participant_id": "p12",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:11:35.400Z"
+    },
+    {
+      "participant_id": "p12",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T07:57:26.403Z"
+    },
+    {
+      "participant_id": "p12",
+      "day": 3,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T15:56:35.769Z"
+    },
+    {
+      "participant_id": "p12",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T15:56:25.521Z"
+    },
+    {
+      "participant_id": "p14",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": "",
+      "updated_at": "2026-06-20T09:10:15.632Z"
+    },
+    {
+      "participant_id": "p14",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": "سمعت  عند الفقيه",
+      "updated_at": "2026-06-20T09:11:16.115Z"
+    },
+    {
+      "participant_id": "p14",
+      "day": 3,
+      "wird_done": true,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:11:29.453Z"
+    },
+    {
+      "participant_id": "p14",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T00:01:44.591Z"
+    },
+    {
+      "participant_id": "p2",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:26:12.839Z"
+    },
+    {
+      "participant_id": "p2",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:26:24.685Z"
+    },
+    {
+      "participant_id": "p2",
+      "day": 3,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:26:31.643Z"
+    },
+    {
+      "participant_id": "p2",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T16:14:58.781Z"
+    },
+    {
+      "participant_id": "p2",
+      "day": 5,
+      "wird_done": false,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-21T05:10:25.573Z"
+    },
+    {
+      "participant_id": "p3",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:58:35.868Z"
+    },
+    {
+      "participant_id": "p4",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:59:07.267Z"
+    },
+    {
+      "participant_id": "p5",
+      "day": 4,
+      "wird_done": false,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:29:44.387Z"
+    },
+    {
+      "participant_id": "p6",
+      "day": 4,
+      "wird_done": false,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:29:50.912Z"
+    },
+    {
+      "participant_id": "p7",
+      "day": 1,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:26:15.690Z"
+    },
+    {
+      "participant_id": "p7",
+      "day": 2,
+      "wird_done": true,
+      "listened_to_peer": true,
+      "uploaded": true,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T08:26:40.186Z"
+    },
+    {
+      "participant_id": "p7",
+      "day": 4,
+      "wird_done": false,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T09:36:33.465Z"
+    },
+    {
+      "participant_id": "p8",
+      "day": 4,
+      "wird_done": true,
+      "listened_to_peer": false,
+      "uploaded": false,
+      "needs_redo": false,
+      "progress_note": null,
+      "updated_at": "2026-06-20T15:46:44.480Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "n-1782000149206",
+      "title": "شكر",
+      "body": "احسنت",
+      "kind": "thanks",
+      "target": {
+        "type": "participant",
+        "participantId": "p14"
+      },
+      "created_at": "2026-06-21T00:02:29.217Z",
+      "author": "الشيخ الحوري"
+    }
+  ],
+  "monthlySheikhReviews": []
+}
