@@ -28,6 +28,12 @@ function sql() {
   return neon(url);
 }
 
+// Postgres error codes for "table doesn't exist" / "column doesn't exist" —
+// both mean this build is running against a database that hasn't caught up
+// with neon-schema.sql yet.
+const MISSING_TABLE = "42P01";
+const MISSING_COLUMN = "42703";
+
 const currentUserSchema = z
   .union([
     z.object({ role: z.literal("participant"), participantId: z.string() }),
@@ -52,9 +58,14 @@ interface DailyRecordRow {
   progress_note: string | null;
 }
 
+// marked_late arrives with a newer neon-schema.sql than a live database may
+// have run yet. Reading it through to_jsonb() keeps this query valid on both
+// schemas — a column that isn't there yet simply reads as false — so deploying
+// ahead of the migration degrades instead of failing every page load.
 export const fetchDailyRecords = createServerFn({ method: "GET" }).handler(async (): Promise<DailyRecord[]> => {
   const rows = (await sql()`
-    select participant_id, day, wird_done, listened_to_peer, uploaded, marked_late, progress_note
+    select participant_id, day, wird_done, listened_to_peer, uploaded, progress_note,
+      coalesce((to_jsonb(daily_records) ->> 'marked_late')::boolean, false) as marked_late
     from daily_records
   `) as unknown as DailyRecordRow[];
 
@@ -91,7 +102,8 @@ export const updateDailyRecord = createServerFn({ method: "POST" })
 
     const db = sql();
     const existingRows = (await db`
-      select wird_done, listened_to_peer, uploaded, marked_late, progress_note
+      select wird_done, listened_to_peer, uploaded, progress_note,
+        coalesce((to_jsonb(daily_records) ->> 'marked_late')::boolean, false) as marked_late
       from daily_records where participant_id = ${participantId} and day = ${day}
     `) as unknown as DailyRecordRow[];
     const existing = existingRows[0];
@@ -110,17 +122,34 @@ export const updateDailyRecord = createServerFn({ method: "POST" })
     const becameTouched = wasUntouched && (merged.wirdDone || merged.listenedToPeer || merged.uploaded);
     const markedLate = existing?.marked_late || (becameTouched && day < getProgramDay().absoluteDay);
 
-    await db`
-      insert into daily_records (participant_id, day, wird_done, listened_to_peer, uploaded, marked_late, progress_note, updated_at)
-      values (${participantId}, ${day}, ${merged.wirdDone}, ${merged.listenedToPeer}, ${merged.uploaded}, ${markedLate}, ${merged.progressNote}, now())
-      on conflict (participant_id, day) do update set
-        wird_done = excluded.wird_done,
-        listened_to_peer = excluded.listened_to_peer,
-        uploaded = excluded.uploaded,
-        marked_late = excluded.marked_late,
-        progress_note = excluded.progress_note,
-        updated_at = excluded.updated_at
-    `;
+    try {
+      await db`
+        insert into daily_records (participant_id, day, wird_done, listened_to_peer, uploaded, marked_late, progress_note, updated_at)
+        values (${participantId}, ${day}, ${merged.wirdDone}, ${merged.listenedToPeer}, ${merged.uploaded}, ${markedLate}, ${merged.progressNote}, now())
+        on conflict (participant_id, day) do update set
+          wird_done = excluded.wird_done,
+          listened_to_peer = excluded.listened_to_peer,
+          uploaded = excluded.uploaded,
+          marked_late = excluded.marked_late,
+          progress_note = excluded.progress_note,
+          updated_at = excluded.updated_at
+      `;
+    } catch (error) {
+      if ((error as { code?: string })?.code !== MISSING_COLUMN) throw error;
+      // Same window as the read above: on a database that hasn't run the
+      // marked_late migration yet, save the day's progress without the late
+      // flag instead of rejecting the participant's entry outright.
+      await db`
+        insert into daily_records (participant_id, day, wird_done, listened_to_peer, uploaded, progress_note, updated_at)
+        values (${participantId}, ${day}, ${merged.wirdDone}, ${merged.listenedToPeer}, ${merged.uploaded}, ${merged.progressNote}, now())
+        on conflict (participant_id, day) do update set
+          wird_done = excluded.wird_done,
+          listened_to_peer = excluded.listened_to_peer,
+          uploaded = excluded.uploaded,
+          progress_note = excluded.progress_note,
+          updated_at = excluded.updated_at
+      `;
+    }
   });
 
 interface NotificationRow {
@@ -257,8 +286,6 @@ interface WeeklyRecitationRow {
   note: string | null;
   saved_at: string;
 }
-
-const MISSING_TABLE = "42P01";
 
 export const fetchWeeklySheikhRecitations = createServerFn({ method: "GET" }).handler(async (): Promise<Record<string, WeeklySheikhRecitation>> => {
   let rows: WeeklyRecitationRow[];

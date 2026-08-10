@@ -13,9 +13,23 @@ create table if not exists daily_records (
 );
 
 -- ترقية لقاعدة بيانات منشورة مسبقًا (تستبدل "إعادة" بحالة "متأخر" المحسوبة
--- تلقائيًا عند التسجيل بعد انتهاء يوم الورد):
+-- تلقائيًا عند التسجيل بعد انتهاء يوم الورد). عمود needs_redo القديم يبقى في
+-- مكانه ولا يُحذف حتى لا تتغيّر البيانات المحفوظة سابقًا؛ التطبيق لم يعد
+-- يقرأه أو يكتب فيه.
 alter table daily_records add column if not exists marked_late boolean not null default false;
-alter table daily_records drop column if exists needs_redo;
+
+-- الأيام التي كانت معلّمة "إعادة" تُنقل إلى علامة "متأخر" لتبقى نسبتها في
+-- التقارير السابقة كما كانت (٥٠٪) بدل أن ترتفع بعد إلغاء حالة "إعادة".
+-- الشرط يجعل الجملة آمنة على قاعدة بيانات جديدة لا تحتوي العمود القديم.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'daily_records' and column_name = 'needs_redo'
+  ) then
+    update daily_records set marked_late = true where needs_redo and not marked_late;
+  end if;
+end $$;
 
 create table if not exists notifications (
   id text primary key,
