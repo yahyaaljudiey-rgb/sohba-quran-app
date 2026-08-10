@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { ProgressBar, ReviewBadge, StatusBadge } from "@/components/Badges";
 import { dailyCompletion, findRecordForDay, getGroups, getPartner, getWirdForLevelOnDay, isPairUploadedOnDay, participantReports, dayRelativeLabel, selectableProgramDays, statusForParticipantOnDay, visibleParticipantIdsFor, type DailyRecordPatch } from "@/lib/sohba-data";
 import { useSohbaStore } from "@/lib/store";
-import { BookOpen, CheckCircle2, Mic, RotateCcw, type LucideIcon } from "lucide-react";
+import { BookOpen, CheckCircle2, Mic, type LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/wird")({
   head: () => ({
@@ -63,7 +63,6 @@ function WirdPage() {
       icon: CheckCircle2,
       active: Boolean(todayRecord?.uploaded),
     },
-    { label: "يحتاج إعادة", patch: { needsRedo: !todayRecord?.needsRedo }, icon: RotateCcw, active: Boolean(todayRecord?.needsRedo) },
   ];
 
   return (
@@ -172,7 +171,7 @@ function WirdPage() {
             <div className="mt-1"><ProgressBar value={selected.progress} /></div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-5 grid grid-cols-3 gap-2">
             {actions.map((a) => {
               const Icon = a.icon;
               return (

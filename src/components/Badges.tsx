@@ -1,7 +1,7 @@
 import { REVIEW_COLOR, REVIEW_LABEL, STATUS_COLOR, STATUS_LABEL, type ParticipantStatus, type ReviewType } from "@/lib/sohba-data";
 
 export function StatusBadge({ status }: { status: ParticipantStatus }) {
-  const attention = status === "ready" || status === "late" || status === "redo";
+  const attention = status === "ready" || status === "late";
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all duration-300 ${STATUS_COLOR[status]}`}>
       <span className={`h-1.5 w-1.5 rounded-full bg-current ${attention ? "pulse-dot" : ""}`} />

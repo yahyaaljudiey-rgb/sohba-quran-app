@@ -35,3 +35,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
+
+# Build/tooling artifacts
+*.tsbuildinfo
+.workspace/

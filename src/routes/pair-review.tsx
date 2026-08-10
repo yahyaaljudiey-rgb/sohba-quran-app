@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { ReviewBadge, StatusBadge } from "@/components/Badges";
 import { findRecordForDay, participantReports, REVIEW_LABEL, dayRelativeLabel, selectableProgramDays, statusForParticipantOnDay, visibleParticipantIdsFor, type DailyRecordPatch, type ParticipantStatus, type ReviewType } from "@/lib/sohba-data";
 import { useSohbaStore } from "@/lib/store";
-import { BookOpen, CheckCircle2, Copy, Mic, RotateCcw } from "lucide-react";
+import { BookOpen, CheckCircle2, Copy, Mic } from "lucide-react";
 
 export const Route = createFileRoute("/pair-review")({
   head: () => ({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/pair-review")({
   component: PairReviewPage,
 });
 
-type Filter = "all" | "done" | "pending" | "late" | "redo" | "quarter" | "half";
+type Filter = "all" | "done" | "pending" | "late" | "quarter" | "half";
 
 function PairReviewPage() {
   const [filter, setFilter] = useState<Filter>("all");
@@ -36,7 +36,6 @@ function PairReviewPage() {
         case "done": return selectedStatus === "recited";
         case "pending": return ["idle", "wird_done", "ready"].includes(selectedStatus);
         case "late": return selectedStatus === "late";
-        case "redo": return selectedStatus === "redo";
         case "quarter": return p.reviewType === "quarter";
         case "half": return p.reviewType === "half";
         default: return true;
@@ -49,7 +48,6 @@ function PairReviewPage() {
     { v: "done", label: "رُفع الثنائي" },
     { v: "pending", label: "لم يكتمل" },
     { v: "late", label: "متأخر" },
-    { v: "redo", label: "يحتاج إعادة" },
     { v: "quarter", label: "ربع حزب" },
     { v: "half", label: "نصف حزب" },
   ];
@@ -126,7 +124,6 @@ function PairReviewPage() {
                 patch: record?.uploaded ? { uploaded: false } : { wirdDone: true, listenedToPeer: true, uploaded: true },
                 active: Boolean(record?.uploaded),
               },
-              { label: "إعادة", icon: RotateCcw, patch: { needsRedo: !record?.needsRedo }, active: Boolean(record?.needsRedo) },
             ];
             return (
               <li key={p.id} className="px-4 py-3">
@@ -147,7 +144,7 @@ function PairReviewPage() {
                     {copied === p.name ? "تم النسخ" : "رسالة"}
                   </button>
                 </div>
-                <div className="mt-3 grid grid-cols-4 gap-2">
+                <div className="mt-3 grid grid-cols-3 gap-2">
                   {actions.map((a) => {
                     const Icon = a.icon;
                     return (

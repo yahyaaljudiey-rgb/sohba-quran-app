@@ -7,7 +7,6 @@ export type ParticipantStatus =
   | "wird_done"
   | "ready"
   | "recited"
-  | "redo"
   | "late";
 
 export interface Participant {
@@ -47,11 +46,14 @@ export interface DailyRecord {
   wirdDone: boolean;
   listenedToPeer: boolean;
   uploaded: boolean;
-  needsRedo: boolean;
+  // Set server-side the first time this record receives any progress, based
+  // on whether that happened after the program day it belongs to had already
+  // passed. A same-day entry never becomes late retroactively.
+  markedLate: boolean;
   progressNote?: string;
 }
 
-export type DailyRecordPatch = Partial<Pick<DailyRecord, "wirdDone" | "listenedToPeer" | "uploaded" | "needsRedo" | "progressNote">>;
+export type DailyRecordPatch = Partial<Pick<DailyRecord, "wirdDone" | "listenedToPeer" | "uploaded" | "progressNote">>;
 
 export interface WirdPlan {
   level: Level;
@@ -75,7 +77,6 @@ export interface ParticipantReport extends Participant {
   uploadedDays: number;
   pairedUploadDays: number;
   lateDays: number;
-  redoDays: number;
   weeklyProgress: number;
   monthlyProgress: number;
 }
@@ -106,6 +107,26 @@ export interface MonthlySheikhReview {
   savedAt: string;
 }
 
+// One Hijri week of the program: weeks restart with each Hijri month, matching
+// ProgramDay.week, so a week is only unique together with its month and year.
+export interface ProgramWeekRef {
+  hijriYear: number;
+  hijriMonthIndex: number;
+  week: number;
+}
+
+// السرد الأسبوعي — recorded by the sheikh for one student, read-only for the
+// student in their own report.
+export interface WeeklySheikhRecitation extends ProgramWeekRef {
+  participantId: string;
+  mode: "online" | "in_person";
+  portion: string;
+  grade: string;
+  errors: string[];
+  note: string;
+  savedAt: string;
+}
+
 export type CurrentUser =
   | { role: "participant"; participantId: string }
   | { role: "admin"; name: string };
@@ -130,7 +151,6 @@ export const STATUS_LABEL: Record<ParticipantStatus, string> = {
   wird_done: "أنجز الورد",
   ready: "سمّع للنظير",
   recited: "رُفع الثنائي",
-  redo: "يحتاج إعادة",
   late: "متأخر",
 };
 
@@ -139,7 +159,6 @@ export const STATUS_COLOR: Record<ParticipantStatus, string> = {
   wird_done: "bg-status-ready/15 text-[color:var(--status-ready)] border-status-ready/40",
   ready: "bg-status-ready/20 text-[color:var(--gold-deep)] border-status-ready/50",
   recited: "bg-status-done/15 text-[color:var(--status-done)] border-status-done/40",
-  redo: "bg-status-redo/15 text-[color:var(--status-redo)] border-status-redo/40",
   late: "bg-status-late/15 text-[color:var(--status-late)] border-status-late/40",
 };
 
@@ -254,7 +273,7 @@ const clamp = (value: number, min: number, max: number) =>
 
 export const dailyCompletion = (record?: DailyRecord) => {
   if (!record) return 0;
-  if (record.needsRedo) return 50;
+  if (record.markedLate) return 50;
   if (record.uploaded) return 100;
   if (record.listenedToPeer) return 70;
   if (record.wirdDone) return 35;
@@ -313,7 +332,7 @@ const dailyRecordFor = (participant: Participant, day: number, hijriMonthIndex: 
   wirdDone: false,
   listenedToPeer: false,
   uploaded: false,
-  needsRedo: false,
+  markedLate: false,
 });
 
 export const buildDailyRecords = (untilDay = PROGRAM_YEAR_DAYS): DailyRecord[] => {
@@ -332,6 +351,39 @@ export const buildDailyRecords = (untilDay = PROGRAM_YEAR_DAYS): DailyRecord[] =
 };
 
 export const dailyRecords = buildDailyRecords();
+
+// Deterministic pseudo-random data used only as a local-dev fallback (see
+// store.tsx) when DATABASE_URL isn't configured, so the UI can be previewed
+// without a real DB connection. Never used in production builds.
+const seededRandom = (seed: number) => {
+  let value = seed % 2147483647;
+  if (value <= 0) value += 2147483646;
+  return () => {
+    value = (value * 16807) % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+};
+
+export const mockDailyRecords = (untilDay: number): DailyRecord[] => {
+  const participants = baseParticipants();
+  const records: DailyRecord[] = [];
+  const start = new Date(PROGRAM_START_GREGORIAN).getTime();
+
+  participants.forEach((participant, participantIndex) => {
+    const rand = seededRandom(participantIndex * 7919 + 13);
+    for (let day = 1; day <= untilDay; day += 1) {
+      const programDay = getProgramDay(new Date(start + (day - 1) * dayMs));
+      const record = dailyRecordFor(participant, day, programDay.hijriMonthIndex);
+      const wirdDone = rand() < 0.85;
+      const listenedToPeer = wirdDone && rand() < 0.8;
+      const uploaded = listenedToPeer && rand() < 0.85;
+      const markedLate = (wirdDone || listenedToPeer || uploaded) && rand() < 0.1;
+      records.push({ ...record, wirdDone, listenedToPeer, uploaded, markedLate });
+    }
+  });
+
+  return records;
+};
 
 export const getPartner = (participantId: string) => {
   const group = baseGroups.find((g) => g.participants.some((p) => p.id === participantId));
@@ -380,7 +432,7 @@ export const canEditParticipant = (user: CurrentUser | null, participantId: stri
 // Pure helpers shared by both the client (rendering already-fetched records)
 // and the server functions in server-fns.ts (merging rows fetched from the
 // database). Neither side reads/writes storage directly here.
-export const mergeDailyRecordPatches = (patches: Record<string, DailyRecordPatch>): DailyRecord[] =>
+export const mergeDailyRecordPatches = (patches: Record<string, Partial<DailyRecord>>): DailyRecord[] =>
   dailyRecords.map((record) => ({
     ...record,
     ...patches[dailyRecordKey(record.participantId, record.day)],
@@ -419,7 +471,7 @@ export const statusForParticipantOnDay = (participant: Participant, day: number,
   if (!record) return "idle";
   const group = baseGroups.find((g) => g.id === participant.groupId);
   const pairUploaded = Boolean(group?.participants.every((p) => records.find((r) => r.participantId === p.id && r.day === day)?.uploaded));
-  if (record.needsRedo) return "redo";
+  if (record.markedLate) return "late";
   if (record.uploaded && pairUploaded) return "recited";
   if (record.listenedToPeer) return "ready";
   if (record.wirdDone) return "wird_done";
@@ -427,7 +479,7 @@ export const statusForParticipantOnDay = (participant: Participant, day: number,
 };
 
 const hasAnyProgress = (record: DailyRecord) =>
-  record.wirdDone || record.listenedToPeer || record.uploaded || record.needsRedo;
+  record.wirdDone || record.listenedToPeer || record.uploaded;
 
 // Programs that start mid-rollout have participants backfilling earlier days
 // rather than today specifically. The dashboard-level status (no day picker
@@ -466,8 +518,7 @@ const participantMonthReport = (participant: Participant, records = dailyRecords
     const partnerRecord = partnerMonthRecords.find((pr) => pr.day === r.day);
     return r.uploaded && Boolean(partnerRecord?.uploaded);
   }).length;
-  const redoDays = monthRecords.filter((r) => r.needsRedo).length;
-  const lateDays = monthRecords.filter((r) => (r.wirdDone || r.listenedToPeer) && !r.uploaded).length;
+  const lateDays = monthRecords.filter((r) => r.markedLate).length;
   const monthStartDay = today.absoluteDay - today.hijriDay + 1;
   const weekStartDay = Math.max(monthStartDay, today.absoluteDay - 6);
   const weekRecords = monthRecords.filter((r) => r.day >= weekStartDay);
@@ -486,7 +537,6 @@ const participantMonthReport = (participant: Participant, records = dailyRecords
     uploadedDays,
     pairedUploadDays,
     lateDays,
-    redoDays,
     weeklyProgress,
     monthlyProgress,
   };
@@ -657,6 +707,57 @@ export const targetLabel = (target: NotificationTarget) => {
 
 export const monthlyReviewKey = (participantId: string, period: { hijriYear: number; hijriMonthIndex: number } = getProgramDay()) =>
   `${participantId}:${period.hijriYear}:${period.hijriMonthIndex}`;
+
+export const weeklyRecitationKey = (participantId: string, week: ProgramWeekRef) =>
+  `${participantId}:${week.hijriYear}:${week.hijriMonthIndex}:${week.week}`;
+
+export const programWeekRef = (day: ProgramDay = getProgramDay()): ProgramWeekRef => ({
+  hijriYear: day.hijriYear,
+  hijriMonthIndex: day.hijriMonthIndex,
+  week: day.week,
+});
+
+export const programWeekLabel = (week: ProgramWeekRef) =>
+  `الأسبوع ${week.week} من ${HIJRI_MONTHS[week.hijriMonthIndex]} ${week.hijriYear}هـ`;
+
+export const sameProgramWeek = (a: ProgramWeekRef, b: ProgramWeekRef) =>
+  a.hijriYear === b.hijriYear && a.hijriMonthIndex === b.hijriMonthIndex && a.week === b.week;
+
+// Hijri months are 29-30 days, so a month holds at most 5 partial weeks.
+const WEEKS_PER_MONTH = 5;
+
+const programWeekOrdinal = (week: ProgramWeekRef) =>
+  (week.hijriYear * 12 + week.hijriMonthIndex) * WEEKS_PER_MONTH + week.week;
+
+export const isPastOrCurrentProgramWeek = (week: ProgramWeekRef, today = getProgramDay()) =>
+  Number.isInteger(week.week) &&
+  week.week >= 1 &&
+  week.week <= WEEKS_PER_MONTH &&
+  week.hijriMonthIndex >= 0 &&
+  week.hijriMonthIndex <= 11 &&
+  programWeekOrdinal(week) >= programWeekOrdinal({ hijriYear: PROGRAM_HIJRI_YEAR, hijriMonthIndex: 0, week: 1 }) &&
+  programWeekOrdinal(week) <= programWeekOrdinal(programWeekRef(today));
+
+// Weeks the sheikh can record against: this week first, then earlier ones so a
+// missed week can still be filled in. Future weeks are never offered.
+export const recentProgramWeeks = (count = 8, today = getProgramDay()): ProgramWeekRef[] => {
+  const weeks: ProgramWeekRef[] = [];
+  for (let day = today.absoluteDay; day >= 1 && weeks.length < count; day -= 1) {
+    const ref = programWeekRef(programDayFromAbsolute(day));
+    if (!weeks.some((w) => sameProgramWeek(w, ref))) weeks.push(ref);
+  }
+  return weeks;
+};
+
+// Newest first, so a student's report opens on the most recent سرد.
+export const weeklyRecitationsForParticipant = (
+  recitations: Record<string, WeeklySheikhRecitation>,
+  participantId: string,
+) =>
+  Object.values(recitations)
+    .filter((r) => r.participantId === participantId)
+    .sort((a, b) =>
+      b.hijriYear - a.hijriYear || b.hijriMonthIndex - a.hijriMonthIndex || b.week - a.week);
 
 export const getProgramInfo = (today = getProgramDay()) => ({
   startDate: "1 محرم 1448هـ",

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   getProgramDay,
+  mockDailyRecords,
   readCurrentUser,
   saveCurrentUser,
   type CurrentUser,
@@ -9,13 +10,16 @@ import {
   type MonthlySheikhReview,
   type ProgramDay,
   type ProgramNotification,
+  type WeeklySheikhRecitation,
 } from "@/lib/sohba-data";
 import {
   addNotification as addNotificationFn,
   fetchDailyRecords,
   fetchMonthlySheikhReviews,
   fetchNotifications,
+  fetchWeeklySheikhRecitations,
   saveMonthlySheikhReviewFn,
+  saveWeeklySheikhRecitationFn,
   updateDailyRecord as updateDailyRecordFn,
 } from "@/lib/server-fns";
 
@@ -32,6 +36,8 @@ interface SohbaStore {
   addNotification: (notification: Omit<ProgramNotification, "id" | "createdAt" | "author">) => Promise<void>;
   monthlySheikhReviews: Record<string, MonthlySheikhReview>;
   saveMonthlySheikhReview: (review: Omit<MonthlySheikhReview, "hijriMonthIndex" | "hijriYear" | "savedAt">) => Promise<void>;
+  weeklySheikhRecitations: Record<string, WeeklySheikhRecitation>;
+  saveWeeklySheikhRecitation: (recitation: Omit<WeeklySheikhRecitation, "savedAt">) => Promise<void>;
 }
 
 const SohbaStoreContext = createContext<SohbaStore | null>(null);
@@ -50,20 +56,31 @@ export function SohbaStoreProvider({ children }: { children: ReactNode }) {
   const [effectiveDailyRecords, setEffectiveDailyRecords] = useState<DailyRecord[]>([]);
   const [notifications, setNotifications] = useState<ProgramNotification[]>([]);
   const [monthlySheikhReviews, setMonthlySheikhReviews] = useState<Record<string, MonthlySheikhReview>>({});
+  const [weeklySheikhRecitations, setWeeklySheikhRecitations] = useState<Record<string, WeeklySheikhRecitation>>({});
 
   const refreshSharedData = async () => {
     try {
-      const [records, notes, reviews] = await Promise.all([
+      const [records, notes, reviews, recitations] = await Promise.all([
         fetchDailyRecords(),
         fetchNotifications(),
         fetchMonthlySheikhReviews(),
+        fetchWeeklySheikhRecitations(),
       ]);
       setEffectiveDailyRecords(records);
       setNotifications(notes);
       setMonthlySheikhReviews(reviews);
+      setWeeklySheikhRecitations(recitations);
       setLoadError(null);
     } catch (error) {
       console.error(error);
+      if (import.meta.env.DEV) {
+        // No DATABASE_URL on this machine — fall back to mock data so the UI
+        // is still previewable locally. Never reached in production builds.
+        console.warn("DATABASE_URL غير مهيأ محليًا — يتم عرض بيانات تجريبية وهمية للمعاينة فقط.");
+        setEffectiveDailyRecords(mockDailyRecords(today.absoluteDay));
+        setLoadError(null);
+        return;
+      }
       setLoadError("تعذّر الاتصال بقاعدة البيانات. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.");
     }
   };
@@ -114,6 +131,11 @@ export function SohbaStoreProvider({ children }: { children: ReactNode }) {
     await refreshSharedData();
   };
 
+  const saveWeeklySheikhRecitation = async (recitation: Omit<WeeklySheikhRecitation, "savedAt">) => {
+    await saveWeeklySheikhRecitationFn({ data: { recitation, user: currentUser } });
+    await refreshSharedData();
+  };
+
   const value: SohbaStore = {
     ready,
     loadError,
@@ -127,6 +149,8 @@ export function SohbaStoreProvider({ children }: { children: ReactNode }) {
     addNotification,
     monthlySheikhReviews,
     saveMonthlySheikhReview,
+    weeklySheikhRecitations,
+    saveWeeklySheikhRecitation,
   };
 
   return <SohbaStoreContext.Provider value={value}>{children}</SohbaStoreContext.Provider>;
